@@ -6,13 +6,14 @@ from random import randint
 from time import time
 from IPython.core.display import clear_output
 from warnings import warn
-
+start_time = time()
+requests =  0
 titles = []
 year = []
 star = []
 imdb_second_page = '&start=51&ref_=adv_nxt'
 iter1 = [1,2]
-imdb_year_url = [str(i) for i in range(2009, 2018)]
+imdb_year_url = [str(i) for i in range(2009, 2019)]
 for year_url in imdb_year_url:
 	for x in iter1
 		if x == 1:
@@ -20,6 +21,22 @@ for year_url in imdb_year_url:
 		if x == 2:
 			url = 'https://www.imdb.com/search/title?title_type=feature&release_date='+year_url+'-01-01,'+year_url +'-12-31&sort=boxoffice_gross_us,desc'+ imdb_second_page
 		response = get(url)
+		#pause loop for random interval between 10 and 15 to space out url requests
+		sleep(randint(10,15))
+		#monitor requests
+		requests += 1
+		elapsed_time = time() - start_time
+		print('Request:{}; Frequancy: {} requests/s'.format(requests, requests/elapsed_time))
+		#clear output so memory isn't unnecessarily used, but wait to clear until a new output is present
+		clear_output(wait = True)
+		#make sure we are scraping correctly
+		if response.status_code != 200:
+			warn('Request: {}; Status code: {}'.format(requests, response.status_code))
+		#break loop if make more requests than necessary
+		if requests > len(iter1)*len(imdb_year_url):
+			warn('Number of requests  has exceeded expectations')
+			break
+
 		hsoup = BeautifulSoup(response.text, 'html.parser')
 		movies_info = hsoup.find_all('div', class_ = 'lister-item mode-advanced')
 		for movie in movies_info:
@@ -42,7 +59,11 @@ movie_stars_df = pd.DataFrame({'title': titles,
 				'year': year,
 				'stars': star})
 
-bom_year_url = [str(i) for i in range(2009, 2018)]
+titles1 = []
+OWBO = []
+start_time=time()
+requests = 0
+bom_year_url = [str(i) for i in range(2009, 2019)]
 for year_url in bom_year_url:
 	for x in iter1:
 		if x == 1:
@@ -50,11 +71,25 @@ for year_url in bom_year_url:
 		if x == 2:
 			url = 'https://www.boxofficemojo.com/yearly/chart/?page='+ str(x)+'&view=releasedate&view2=domestic&yr='+ year_url +'&sort=opengross&p=.htm'
 		response = get(url)
+#pause loop for random interval between 10 and 15 to space out url requests
+		sleep(randint(10,15))
+		#monitor requests
+		requests += 1
+		elapsed_time = time() - start_time
+		print('Request:{}; Frequancy: {} requests/s'.format(requests, requests/elapsed_time))
+		#clear output so memory isn't unnecessarily used, but wait to clear until a new output is present
+		clear_output(wait = True)
+		#make sure we are scraping correctly
+		if response.status_code != 200:
+			warn('Request: {}; Status code: {}'.format(requests, response.status_code))
+		#break loop if make more requests than necessary
+		if requests > len(iter1)*len(bom_year_url):
+			warn('Number of requests  has exceeded expectations')
+			break
 		hsoup2 = BeautifulSoup(response.text, 'html.parser')
 		table = hsoup2.find_all('b')
 		movies_BO = table[9:209]
-		titles1 = []
-		OWBO = []
+
 		for i,val in enumerate(movies_BO):
 			if i%2 == 0:
 				title = val.a.text
