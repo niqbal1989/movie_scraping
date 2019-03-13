@@ -62,6 +62,9 @@ for year_url in imdb_year_url:
 movie_stars_df = pd.DataFrame({'title': titles,
 				'year': year,
 				'stars': star})
+movie_stars_df.to_csv('movie_stars.csv')
+#read in data if you already scraped but lost your environment because our computer screwed up
+#movie_stars_df = pd.read_csv('movie_stars.csv', index_col=0)
 
 titles1 = []
 OWBO = []
@@ -80,7 +83,7 @@ for year_url in bom_year_url:
 		#monitor requests
 		requests += 1
 		elapsed_time = time() - start_time
-		print('Request:{}; Frequancy: {} requests/s'.format(requests, requests/elapsed_time))
+		print('Request:{}; Frequency: {} requests/s'.format(requests, requests/elapsed_time))
 		#clear output so memory isn't unnecessarily used, but wait to clear until a new output is present
 		clear_output(wait = True)
 		#make sure we are scraping correctly
@@ -93,11 +96,14 @@ for year_url in bom_year_url:
 		hsoup2 = BeautifulSoup(response.text, 'html.parser')
 		table = hsoup2.find_all('b')
 		movies_BO = table[9:209]
-
 		for i,val in enumerate(movies_BO):
 			if i%2 == 0:
 				title = val.a.text
-				titles1.append(title)
+				if '(' in title:
+					title = title.split(' (')[0]
+					titles1.append(title)
+				else:
+					titles1.append(title)				
 			else:
 				x = str(val)
 				x = x[4:len(x)-4]
@@ -107,11 +113,27 @@ for year_url in bom_year_url:
 		
 movie_OWBO = pd.DataFrame({'title': titles1,
 				'OWBO': OWBO})
+movie_OWBO.to_csv('movie_OWBO.csv')
 
-		
-	
+#movie_OWBO = pd.read_csv('movie_OWBO.csv', index_col = 0)
 
-
-
-
+movie_stars_df['lowertitle'] = movie_stars_df['title'].str.lower()
+movie_OWBO['lowertitle'] = movie_OWBO['title'].str.lower()
+movie_stars_OWBO = movie_stars_df.merge(movie_OWBO, how= 'left', left_on='lowertitle', right_on = 'lowertitle')
+movie_stars_OWBO.isnull().astype(int).sum()
+#identify missing values
+movie_stars_OWBO[movie_stars_OWBO.duplicated(['stars', 'OWBO'])]
+missing_values = movie_stars_OWBO[movie_stars_OWBO['OWBO'].isnull()]
+missing_titles = missing_values['title_x']
+missing_titles = missing_titles.unique()
+#movie_stars_OWB02 = movie_stars_df.merge(movie_OWBO, how= 'left', left_on='title', right_on = 'title')
+#movie_stars_OWB02.isnull().astype(int).sum()
+movie_OWBO.str.startswith('Fast')
+movie_OWBO = movie_OWBO.replace('Fast and Furious', 'Fast & Furious')
+movie_OWBO = movie_OWBO.replace('Hannah Montana The Movie', 'Hannah Montana: The Movie')
+movie_OWBO = movie_OWBO.replace('The Taking of Pelham 1 2 3', 'The Taking of Pelham 123')
+movie_OWBO = movie_OWBO.replace('Bruno', 'Brüno')
+movie_OWBO = movie_OWBO.replace("Marvel's The Avengers", 'The Avengers')
+movie_OWBO = movie_OWBO.replace("My Bloody Valentine 3-D", 'My Bloody Valentine')
+movie_OWBO = movie_OWBO.replace('Precious: Based on the Novel "Push" by Sapphire', 'Precious')
 
